@@ -1,6 +1,6 @@
 module Dsl
   class Config
-    attr_reader :vault_root, :daily_log_finder, :gsubs, :prefixes, :entry_prefix
+    attr_reader :vault_root, :daily_log_finder, :gsubs, :prefixes, :entry_prefix, :tool_path
 
     def initialize
       @vault_root = nil
@@ -102,7 +102,42 @@ module Dsl
     ################################################################################
     ### Tools
     ################################################################################
-    def find_path_to_tool(tool)
+    def set_tool_path(path)
+      @tool_path = path
+      @tool_output = nil
+      @tool_ec = -666
+      find_path_to_tool(@tool_path)
+    end
+
+    def has_tool?(tool=tool_path)
+      !!find_path_to_tool(tool)
+    end
+
+    def run_tool(tool=tool_path, args=nil)
+      set_tool_path(tool) # Will reset output and ec
+      raise "Could not find tool '#{tool}'" unless has_tool?(tool)
+
+      tool_path = find_path_to_tool(tool)
+      @tool_output = `#{tool_path} #{args}`.strip
+      @tool_ec = $?.to_i
+      @tool_output
+    end
+
+    def tool_ec; @tool_ec; end
+
+    def tool_success?
+      tool_ec == 0
+    end
+
+    def tool_error?
+      tool_ec != 0
+    end
+
+    def tool_output
+      @tool_output
+    end
+
+    def find_path_to_tool(tool=tool_path)
       # Check Cache
       path = @tool_paths[tool.to_s]
       return if path == false
@@ -130,35 +165,9 @@ module Dsl
       @tool_paths[tool]
     end
 
-    def has_tool?(tool)
-      !!find_path_to_tool(tool)
-    end
-
-    def run_tool(tool, args=nil)
-      @tool_ec = -1
-      @tool_output = nil
-      raise "Could not find tool '#{tool}'" unless has_tool?(tool)
-
-      tool_path = find_path_to_tool(tool)
-      @tool_output = `#{tool_path} #{args}`.strip
-      @tool_ec = $?.to_i
-      @tool_output
-    end
-
-    def tool_ec; @tool_ec; end
-
-    def tool_success?
-      tool_ec == 0
-    end
-
-    def tool_error?
-      tool_ec != 0
-    end
-
-    def tool_output
-      @tool_output
-    end
-
+    ################################################################################
+    ### Helper methods
+    ################################################################################
     def assert_gsub_not_present!(key)
       return unless @gsubs.has_key?(key)
 

@@ -22,10 +22,10 @@ add_link_gsub 'DARTP6', { alias: 'Sys76 Laptop', page: 'dartp6' } # [[dartp6|Sys
 
 ### Spotify Song
 add_gsub /^SONG$/ do |entry|
-  script = '.spotify-song.rb'
-  next unless has_tool?(script)
+  set_tool_path '.spotify-song.rb'
+  next unless has_tool?
 
-  run_tool(script)
+  run_tool
   if tool_error?
     next "❌ Error retriving song: #{song_script_path}"
   end
@@ -39,10 +39,10 @@ end
 
 ### Markdown Tool
 add_gsub /%%/ do |entry|
-  tool_path = '~/.raycast-cmds/markdown-tool.sh'
-  next unless has_tool?(tool_path)
+  set_tool_path '~/.raycast-cmds/markdown-tool.sh'
+  next unless has_tool?
 
-  run_tool(tool_path)
+  run_tool
   if tool_error?
     next "❌ MDT-ERROR: #{entry}"
   end
