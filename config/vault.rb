@@ -22,38 +22,31 @@ add_link_gsub 'DARTP6', { alias: 'Sys76 Laptop', page: 'dartp6' } # [[dartp6|Sys
 
 ### Spotify Song
 add_gsub /^SONG$/ do |entry|
-  song_script_path = Pathname.new("~/bin/.spotify-song.rb").expand_path
-  next unless song_script_path.executable?
+  script = '.spotify-song.rb'
+  next unless has_tool?(script)
 
-  script_output = `#{song_script_path.to_s}`.strip
-  song_ec = $?.to_i
-  if song_ec != 0
+  run_tool(script)
+  if tool_error?
     next "❌ Error retriving song: #{song_script_path}"
   end
 
-  song_title =
-    if script_output.empty?
-      "❌ Could not get current song from spotify"
-    else
-      script_output
-    end
+  if tool_output.empty?
+    next "❌ Could not get current song from spotify"
+  end
+
+  tool_output
 end
 
 ### Markdown Tool
 add_gsub /%%/ do |entry|
-  song_script_path = Pathname.new("~/bin/.spotify-song.rb").expand_path
-  next unless song_script_path.executable?
+  tool_path = '~/.raycast-cmds/markdown-tool.sh'
+  next unless has_tool?(tool_path)
 
-  script_output = `#{song_script_path.to_s}`.strip
-  song_ec = $?.to_i
-  if song_ec != 0
-    next "❌ Error retriving song: #{song_script_path}"
+  run_tool(tool_path)
+  if tool_error?
+    next "❌ MDT-ERROR: #{entry}"
   end
 
-  song_title =
-    if script_output.empty?
-      "❌ Could not get current song from spotify"
-    else
-      script_output
-    end
+  tool_output
 end
+

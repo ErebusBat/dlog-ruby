@@ -33,6 +33,11 @@ def main
   cfg = load_config
   input = read_input
 
+  if input.blank?
+    $stderr.puts "No input, exiting"
+    exit 1
+  end
+
   append_to_log(cfg)
   puts cfg.process_entry_line(input)
 end

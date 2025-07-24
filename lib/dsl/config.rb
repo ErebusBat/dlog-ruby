@@ -7,6 +7,9 @@ module Dsl
       @daily_log_finder = nil
       @gsubs = {}
       @prefixes = {}
+      @tool_paths = {}
+      @tool_ec = 0
+      @tool_output = nil
     end
 
     def set_vault_root(path)
@@ -72,7 +75,33 @@ module Dsl
       @gsubs[search] = LinkSubstitution.new(search, replace)
     end
 
-    @tool_paths = {}
+    ################################################################################
+    ### Debugging
+    ################################################################################
+    def dbug(text)
+      $stderr.puts "[#{Time.now}] #{text}"
+    end
+
+    ################################################################################
+    ### Clipboad
+    ################################################################################
+    def get_clipboard
+      `pbpaste`.strip
+    end
+
+    def set_clipboard(text)
+      Tempfile.create do |tmp|
+        tmp.print text
+        tmp.flush
+        tmp.close
+
+        system("/bin/cat #{tmp.path} | pbcopy")
+      end
+    end
+
+    ################################################################################
+    ### Tools
+    ################################################################################
     def find_path_to_tool(tool)
       # Check Cache
       path = @tool_paths[tool.to_s]
@@ -80,8 +109,16 @@ module Dsl
       return path if path.is_a?(Pathname)
 
       # Not in cache, so find it on disk
-      path = `which #{tool}`.strip
-      path = Pathname.new(path).expand_path
+      if tool.include?("/")
+        # We have some sort of path
+        path = Pathname.new(tool).expand_path
+      else
+        # No path, try to find it
+        path = `which #{tool}`.strip
+        path = Pathname.new(path).expand_path
+      end
+
+      # Sanity Checks
       if path.executable?
         @tool_paths[tool] = path
       else
@@ -97,11 +134,29 @@ module Dsl
       !!find_path_to_tool(tool)
     end
 
-    def run_tool(tool, args)
+    def run_tool(tool, args=nil)
+      @tool_ec = -1
+      @tool_output = nil
       raise "Could not find tool '#{tool}'" unless has_tool?(tool)
 
       tool_path = find_path_to_tool(tool)
-      `#{tool_path} #{args}`.strip
+      @tool_output = `#{tool_path} #{args}`.strip
+      @tool_ec = $?.to_i
+      @tool_output
+    end
+
+    def tool_ec; @tool_ec; end
+
+    def tool_success?
+      tool_ec == 0
+    end
+
+    def tool_error?
+      tool_ec != 0
+    end
+
+    def tool_output
+      @tool_output
     end
 
     def assert_gsub_not_present!(key)
