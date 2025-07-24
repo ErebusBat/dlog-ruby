@@ -24,9 +24,14 @@ def read_input
   input.strip
 end
 
-def append_to_log(cfg)
+def append_to_log(cfg, entry, day: Date.today)
   vault = Vault.new(cfg)
-  puts vault.path_to_log
+  daily_log = vault.path_to_log(day)
+
+  # cfg.dbug "Appending entry to log:\n\tlog: #{daily_log}\n\ttxt: #{entry}"
+  daily_log.open('a') do |file|
+    file.puts entry
+  end
 end
 
 def main
@@ -38,6 +43,12 @@ def main
     exit 1
   end
 
-  append_to_log(cfg)
-  puts cfg.process_entry_line(input)
+  entry = cfg.process_entry_line(input)
+  if entry.blank?
+    $stderr.puts "Entry was blank, exiting"
+    exit 2
+  end
+
+  append_to_log(cfg, entry)
+  puts entry
 end
