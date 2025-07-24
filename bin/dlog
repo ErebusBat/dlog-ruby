@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+require 'pathname'
+APP_PATH = Pathname.new(File.expand_path("..", __dir__))
+require 'bundler/setup'
+require 'active_support/all'
+require_relative '../lib/init'
+
+main
