@@ -128,7 +128,15 @@ end
 ################################################################################
 ### Config & Formatting
 ################################################################################
-set_vault_root "~/Documents/Obsidian/vimwiki"
+[
+  "~/Documents/Obsidian/vimwiki",
+  "~/Documents/vimwiki",
+].each do |vault_path|
+  if dir?(vault_path)
+    set_vault_root vault_path
+    break
+  end
+end
 
 set_daily_log_finder do |vault, day|
   date_path = day.strftime("%Y/%m-%b/%Y-%m-%d-%a.md")
