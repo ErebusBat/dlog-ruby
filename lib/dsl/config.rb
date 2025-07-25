@@ -56,14 +56,9 @@ module Dsl
       @gsubs[search] = Substitution.build_gsub(search, replace)
     end
 
-    def add_prefix(prefix, replace, auto_space: true)
-      # 99.9% of the time you want auto_space and it makes the
-      # DSL cleaner not having to have it in there
-      if auto_space
-        prefix = "#{prefix} " unless prefix.ends_with?(' ')
-        if replace.is_a?(String)
-          replace = "#{replace} " unless replace.starts_with?(' ')
-        end
+    def add_prefix(prefix, replace)
+      if replace.is_a?(String)
+        replace = "#{replace} " unless replace.ends_with?(' ')
       end
       assert_prefix_not_present!(prefix)
 
@@ -217,10 +212,12 @@ module Dsl
       @prefixes.each do |key, sub|
         entry = sub.run(entry)
       end
+
       @gsubs.each do |key, sub|
         entry = sub.run(entry)
       end
-      entry
+
+      entry.strip
     end
 
     def to_h

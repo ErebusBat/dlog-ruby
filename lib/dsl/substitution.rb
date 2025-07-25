@@ -39,7 +39,7 @@ module Dsl
     end
 
     def self.build_prefix(prefix, replace)
-      prefix = /^#{Regexp.escape(prefix)}/
+      prefix = /^#{Regexp.escape(prefix)}(\s|$)/
       Substitution.new(prefix, replace)
     end
 

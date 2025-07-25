@@ -22,58 +22,19 @@ RSpec.describe Dsl::Config do
       expect(output).to eq "W- Task 1"
     end
 
-    context 'auto_space' do
-      let(:auto_space) { true }
-      let(:cfg) do
-        loader.build do |cfg|
-          cfg.add_prefix 'T', 'TODO', auto_space: auto_space
-        end
-      end
-
-      context 'on' do
-        it "matches" do
-          input = "T - Task 1"
-          output = cfg.process_entry_text(input)
-          expect(output).to eq "TODO - Task 1"
-        end
-
-        it "does not match" do
-          input = "T- Task 1"
-          output = cfg.process_entry_text(input)
-          expect(output).to eq "T- Task 1"
-        end
-      end
-
-      context 'off' do
-        let(:auto_space) { false }
-
-        it "matches" do
-          input = "T - Task 1"
-          output = cfg.process_entry_text(input)
-          expect(output).to eq "TODO - Task 1"
-        end
-
-        it "matches part" do
-          input = "T- Task 1"
-          output = cfg.process_entry_text(input)
-          expect(output).to eq "TODO- Task 1"
-        end
-      end
-    end
-
-    context "stand alone prefixes" do
+    context "stand alone" do
       let(:cfg) do
         loader.build do |cfg|
           cfg.add_prefix 'LUNCH', '🍱 Lunch'
         end
       end
 
-      it "works as a prefix" do
+      it "as a prefix" do
         output = cfg.process_entry_text("LUNCH - Food")
         expect(output).to eq "🍱 Lunch - Food"
       end
 
-      it "works standalone" do
+      it "standalone" do
         output = cfg.process_entry_text("LUNCH")
         expect(output).to eq "🍱 Lunch"
       end
@@ -96,7 +57,7 @@ RSpec.describe Dsl::Config do
       expect(output).to eq "Hello #{sub_value} World"
     end
 
-    it "in middle word" do
+    it "in word" do
       output = cfg.process_entry_text("Hello #{key_value}'s World")
       expect(output).to eq "Hello #{sub_value}'s World"
     end
@@ -116,6 +77,14 @@ RSpec.describe Dsl::Config do
           cfg.add_gsub key_value, sub_value
         end
       end
+    end
+
+    it "strips whitespace" do
+      cfg = loader.build do |cfg|
+        cfg.add_gsub 'KEY', ' VALUE '
+      end
+      output = cfg.process_entry_text('KEY')
+      expect(output).to eq 'VALUE'
     end
 
     context "Regexp Matacher" do
