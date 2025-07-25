@@ -56,7 +56,15 @@ module Dsl
       @gsubs[search] = Substitution.build_gsub(search, replace)
     end
 
-    def add_prefix(prefix, replace)
+    def add_prefix(prefix, replace, auto_space: true)
+      # 99.9% of the time you want auto_space and it makes the
+      # DSL cleaner not having to have it in there
+      if auto_space
+        prefix = "#{prefix} " unless prefix.ends_with?(' ')
+        if replace.is_a?(String)
+          replace = "#{replace} " unless replace.starts_with?(' ')
+        end
+      end
       assert_prefix_not_present!(prefix)
 
       @prefixes[prefix] = Substitution.build_prefix(prefix, replace)
@@ -71,8 +79,14 @@ module Dsl
           replace = replace[/^\[+([^\[\]]+)\]+/, 1]
         end
         replace = { page: replace }
+      elsif replace.is_a?(Hash)
+        if replace.has_key?(:alias)
+          # Alias provides better ergonomics in the DSL, but is a reserved word
+          # so it messes things up so we do this
+          replace[:display] = replace.delete(:alias)
+        end
       end
-      @gsubs[search] = LinkSubstitution.new(search, replace)
+      @gsubs[search] = LinkSubstitution.new(search, **replace)
     end
 
     ################################################################################

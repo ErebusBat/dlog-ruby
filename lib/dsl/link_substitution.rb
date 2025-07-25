@@ -1,13 +1,11 @@
 module Dsl
   class LinkSubstitution < Substitution
-    attr_reader :page, :alias
+    attr_reader :page, :display
 
-    def initialize(search, replace)
-      raise "replace should be a hash!" unless replace.is_a?(Hash)
-
+    def initialize(search, page: , display: nil)
       @search_rx = /#{Regexp.escape(search)}/
-      @page = replace[:page].to_s
-      @alias = replace[:alias].to_s
+      @page = page.to_s
+      @display = display.to_s
 
       raise "Need at least a page!" if @page.empty?
     end
@@ -15,8 +13,8 @@ module Dsl
     def replace_text(_entry)
       link = "[["
       link += page
-      if !@alias.empty?
-        link += "|#{@alias}"
+      if !@display.empty?
+        link += "|#{@display}"
       end
       link += "]]"
 
