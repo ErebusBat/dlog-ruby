@@ -274,14 +274,41 @@ module Dsl
       raise "You attempted to add a prefix substitution named '#{key}' that has already been configured!"
     end
 
-    def process_entry_line(input, ts: Time.now)
+    def preprocess_entry(input)
+      ret = { input: input, ts: Time.now }
+
+      # TimeStamp Prefix
+      timestamp_prefix_rx = /^(?<hour>\d\d):?(?<minute>\d\d)\|\s*(?<text>.*)\s*/
+      matches = timestamp_prefix_rx.match(input)
+      if matches
+        ret[:ts_prefix] = true
+        ret[:ts] = Time.parse("#{matches['hour']}:#{matches['minute']}")
+        ret[:input] = matches["text"]
+      end
+
+      ret
+    end
+
+    def process_entry_line(input, ts: nil)
+      # Pre-process line entry
+      processed = preprocess_entry(input)
+      if ts.present? && processed[:ts_prefix]
+        raise "You have specified a timestamp as an entry prefix but also in the method call"
+      elsif ts.blank?
+        ts = processed[:ts]
+      end
+      input = processed[:input]
+
+      # Run main processors
       entry_text = process_entry_text(input)
 
+      # Prefix
       prefix = ""
       if @entry_prefix.present?
         prefix = @entry_prefix.call(entry_text, ts)
       end
 
+      # Join output, return
       [prefix, entry_text].join
     end
 
