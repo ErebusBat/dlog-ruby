@@ -2,6 +2,8 @@
 
 A Ruby command-line tool for appending timestamped entries to your daily log in an Obsidian vault.
 
+Technically speaking it doesn't have to be an Obsidian vault, any plain text file will do.
+
 ## Overview
 
 `dlog` (daily log) is a simple CLI tool that helps you quickly add entries to your daily notes in Obsidian. It supports text substitutions, emoji shortcuts, and can even integrate with external tools to automatically log information like what song you're currently listening to.
@@ -223,7 +225,7 @@ end
 Enable debug output in your configuration:
 
 ```ruby
-set_debug true
+set_debug $stderr
 ```
 
 ## Helper Tools
@@ -349,4 +351,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-[Specify your license here]
+© ErebusBat 2025
