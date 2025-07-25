@@ -10,5 +10,13 @@ module Dsl
       cfg.instance_eval dsl, path.to_s, 1
       cfg
     end
+
+    def build(cfg=Config.new)
+      raise "Need a block" unless block_given?
+
+      yield cfg
+
+      cfg
+    end
   end
 end
