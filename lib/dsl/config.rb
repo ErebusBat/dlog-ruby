@@ -10,6 +10,7 @@ module Dsl
       @tool_paths = {}
       @tool_ec = 0
       @tool_output = nil
+      @debug = nil
     end
 
     def set_vault_root(path)
@@ -95,8 +96,21 @@ module Dsl
     ################################################################################
     ### Debugging
     ################################################################################
+    def set_debug_output(val)
+      if val.nil?
+        @debug = nil
+        return
+      elsif val.respond_to?(:puts)
+        @debug = val
+      else
+        raise "Invalid output device for debug"
+      end
+    end
+
     def dbug(text)
-      $stderr.puts "[#{Time.now}] #{text}"
+      return if @debug.nil?
+
+      @debug.puts "[#{Time.now}] #{text}"
     end
 
     ################################################################################
@@ -119,24 +133,33 @@ module Dsl
     ################################################################################
     ### Tools
     ################################################################################
-    def set_tool_path(path)
-      @tool_path = path
+    def set_tool_path(tpath)
+      dbug "set_tool_path('#{tpath}')"
+      @tool_path = tpath
       @tool_output = nil
       @tool_ec = -666
-      find_path_to_tool(@tool_path)
+      real_path = find_path_to_tool(tpath)
+      # @tool_path = tpath unless real_path.blank?
+      dbug "set_tool_path('#{tpath}') = #{real_path}"
+      real_path
     end
 
     def has_tool?(tool=tool_path)
-      !!find_path_to_tool(tool)
+      dbug "has_tool?('#{tool}')"
+      res = !!find_path_to_tool(tool)
+      dbug "has_tool?('#{tool}') == #{res}"
+      res
     end
 
     def run_tool(tool=tool_path, args=nil)
+      dbug "run_tool('#{tool}', #{args})"
       set_tool_path(tool) # Will reset output and ec
       raise "Could not find tool '#{tool}'" unless has_tool?(tool)
 
       tool_path = find_path_to_tool(tool)
       @tool_output = `#{tool_path} #{args}`.strip
       @tool_ec = $?.to_i
+      dbug "run_tool[#{@tool_ec}] >>>#{@tool_output}<<<"
       @tool_output
     end
 
@@ -154,9 +177,12 @@ module Dsl
       @tool_output
     end
 
-    def find_path_to_tool(tool=tool_path)
+    def find_path_to_tool(tool)
+      dbug "find_path_to_tool('#{tool}')"
       # Check Cache
+      tool = tool.to_s
       path = @tool_paths[tool.to_s]
+      dbug "find_path_to_tool('#{tool}') cached=#{path}" unless path.nil?
       return if path == false
       return path if path.is_a?(Pathname)
 
@@ -167,17 +193,21 @@ module Dsl
       else
         # No path, try to find it
         path = `which #{tool}`.strip
-        path = Pathname.new(path).expand_path
+        dbug "find_path_to_tool('#{tool}') path_search=#{path}"
+        path = Pathname.new(path).expand_path unless path.blank?
       end
 
       # Sanity Checks
-      if path.executable?
+      if path.blank?
+        # Could not find it, cache bad result
+        @tool_paths[tool] = false
+      elsif path.executable?
         @tool_paths[tool] = path
       else
         # Could not find it, cache bad result
         @tool_paths[tool] = false
-        return
       end
+      dbug "find_path_to_tool('#{tool}') #{@tool_paths[path]}"
 
       @tool_paths[tool]
     end
