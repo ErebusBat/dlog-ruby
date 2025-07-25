@@ -6,7 +6,7 @@ module Dsl
       raise "Could not find #{path} or it is empty" unless path.size?
 
       dsl = path.read
-      cfg = Config.new
+      cfg = Config.new(path)
       cfg.instance_eval dsl, path.to_s, 1
       cfg
     end

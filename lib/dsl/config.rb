@@ -1,8 +1,13 @@
 module Dsl
   class Config
+    attr_reader :config_file_path
     attr_reader :vault_root, :daily_log_finder, :gsubs, :prefixes, :entry_prefix, :tool_path
 
-    def initialize
+    def initialize(path=nil)
+      unless path.blank?
+        @config_file_path = Pathname.new(path)
+      end
+
       @vault_root = nil
       @daily_log_finder = nil
       @gsubs = {}
@@ -210,6 +215,48 @@ module Dsl
       dbug "find_path_to_tool('#{tool}') #{@tool_paths[path]}"
 
       @tool_paths[tool]
+    end
+
+    ################################################################################
+    ### File Operations
+    ################################################################################
+    def from_file?
+      @config_file_path.is_a?(Pathname)
+    end
+
+    def include(file)
+      file = Pathname.new(file)
+      dbug "include('#{file}')"
+      full_path =
+        if file.absolute?
+          file
+        elsif !from_file?
+          raise "You can not include relative files if your config was not loaded from a file"
+        else
+          @config_file_path.parent.join(file)
+        end
+
+      unless full_path.file? && full_path.readable?
+        raise "Could not find or read #{full_path}"
+      end
+
+      include_contents = full_path.read
+      dbug "include('#{file}') (#{include_contents.size} bytes)"
+      self.instance_eval include_contents, full_path.to_s, 1
+    end
+
+    def include_glob(glob, parent: @config_file_path&.parent)
+      if parent.nil?
+        raise "Can not include glob without a config directory"
+      end
+      dbug "include_glob('#{glob}')"
+
+      count = 0
+      parent.glob(glob).sort.each do |cfile|
+        count +=1
+        include(cfile)
+      end
+      dbug "include_glob('#{glob}') (#{count} files)"
     end
 
     ################################################################################
