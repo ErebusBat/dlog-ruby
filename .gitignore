@@ -6,6 +6,9 @@
 
 .DS_Store
 
+# Ignore local config folder, it is only there for convinence
+config/local/*
+
 # Ignore bundler config.
 /.bundle
 
