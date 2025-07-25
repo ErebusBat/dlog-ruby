@@ -202,12 +202,12 @@ module Dsl
       raise "You attempted to add a prefix substitution named '#{key}' that has already been configured!"
     end
 
-    def process_entry_line(input)
+    def process_entry_line(input, ts: Time.now)
       entry_text = process_entry_text(input)
 
       prefix = ""
       if @entry_prefix.present?
-        prefix = @entry_prefix.call(entry_text)
+        prefix = @entry_prefix.call(entry_text, ts)
       end
 
       [prefix, entry_text].join

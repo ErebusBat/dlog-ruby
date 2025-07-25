@@ -1,6 +1,20 @@
 require_relative 'dsl'
 require_relative 'vault'
 
+def config_file_path
+  [
+    ENV['DLOG_CONFIG'],
+    "~/.config/dlog/vault.rb",
+    "./vault_config.rb"
+  ].each do |candidate_path|
+    next if candidate_path.blank?
+
+    candidate_path = Pathname.new(candidate_path).expand_path
+    return candidate_path if candidate_path.readable?
+  end
+  nil
+end
+
 def load_config(file='config/vault.rb')
   file = Pathname.new(file)
   if !file.size?
@@ -9,6 +23,15 @@ def load_config(file='config/vault.rb')
 
   loader = Dsl::Loader.new
   cfg = loader.load_file(file)
+end
+
+def find_and_load_user_config
+  cfg_path = config_file_path
+  unless cfg_path.present?
+    raise "Could not find config file in ~/.config/dlog/vault.rb"
+  end
+
+  load_config(cfg_path)
 end
 
 def read_input
@@ -35,7 +58,7 @@ def append_to_log(cfg, entry, day: Date.today)
 end
 
 def main
-  cfg = load_config
+  cfg = find_and_load_user_config
   input = read_input
 
   if input.blank?
