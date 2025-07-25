@@ -18,6 +18,8 @@ A Ruby command-line tool for appending timestamped entries to your daily log in 
 
 ## Installation
 
+### Development Installation
+
 1. Clone the repository:
 ```bash
 git clone https://github.com/erebusbat/dlog-ruby.git
@@ -34,11 +36,36 @@ bundle install
 chmod +x bin/dlog
 ```
 
-4. (Optional) Add to your PATH:
+4. Add to your PATH:
 ```bash
 ln -s "$(pwd)/bin/dlog" ~/bin/dlog
-# or add the bin directory to your PATH
 ```
+
+### Production Installation (Recommended)
+
+For daily use, it's recommended to install dlog at `~/.local/share/dlog-ruby` and use the provided wrapper script:
+
+1. Clone to the standard location:
+```bash
+git clone https://github.com/erebusbat/dlog-ruby.git ~/.local/share/dlog-ruby
+cd ~/.local/share/dlog-ruby
+bundle install
+```
+
+If you use [chezmoi](https://www.chezmoi.io/) then you can put this in your `.chezmoiexternal` file and it will keep the repository up to date:
+```toml
+["src/erebusbat/dlog-ruby"]
+  type = "git-repo"
+  url = "https://github.com/ErebusBat/dlog-ruby.git"
+  refreshPeriod = "72h"
+```
+
+2. Install the wrapper script:
+```bash
+ln -s ~/.local/share/dlog-ruby/tools/bin_wrapper.sh ~/bin/dlog
+```
+
+The wrapper script handles Ruby environment setup (including mise support) automatically. See [Helper Tools](#helper-tools) for more details.
 
 ## Configuration
 
@@ -198,6 +225,51 @@ Enable debug output in your configuration:
 ```ruby
 set_debug true
 ```
+
+## Helper Tools
+
+dlog includes helper tools to make integration easier:
+
+### bin_wrapper.sh
+
+A production-ready wrapper script that handles Ruby environment setup:
+
+- **Location**: `tools/bin_wrapper.sh`
+- **Purpose**: Sets up the Ruby environment and launches dlog
+- **Features**:
+  - Automatically activates mise shims if available
+  - Expects dlog-ruby to be installed at `~/.local/share/dlog-ruby`
+  - Recommended to symlink to `~/bin/dlog` for system-wide access
+
+**Usage**:
+```bash
+# After installing dlog-ruby at ~/.local/share/dlog-ruby
+ln -s ~/.local/share/dlog-ruby/tools/bin_wrapper.sh ~/bin/dlog
+
+# Now you can use dlog from anywhere
+dlog "My log entry"
+```
+
+### Raycast Integration
+
+Quick logging directly from Raycast with keyboard shortcuts:
+
+- **Location**: `tools/raycast-command.sh`
+- **Purpose**: Raycast script command for rapid logging
+- **Requirements**: Expects the wrapper script to be installed at `~/bin/dlog`
+
+**Installation**:
+1. Install dlog and wrapper as described above
+2. Open Raycast → Extensions → Script Commands
+3. Add the script from `tools/raycast-command.sh`
+4. Assign a hotkey (e.g., ⌘⇧L)
+
+**Usage**:
+- Trigger your hotkey
+- Type your log entry
+- Press Enter to append to your daily log
+
+The Raycast integration makes it incredibly fast to log entries without switching contexts.
 
 ## Examples
 
