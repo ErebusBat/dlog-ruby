@@ -252,6 +252,52 @@ ln -s ~/.local/share/dlog-ruby/tools/bin_wrapper.sh ~/bin/dlog
 dlog "My log entry"
 ```
 
+### Spotify Integration
+
+Log what you're currently listening to on Spotify:
+
+- **Location**: `tools/spotify-song.rb`
+- **Purpose**: Fetches the currently playing track from Spotify and formats it for your log
+- **Output Format**: `[🎵 Song Title - Artist Name](spotify-link)`
+
+**Setup**:
+1. Create a Spotify app at https://developer.spotify.com/dashboard
+2. Create config file at `~/.config/erebusbat/spotify_client.yml`:
+   ```yaml
+   client_id: your_spotify_client_id
+   client_secret: your_spotify_client_secret
+   port: 8888  # Optional, defaults to 8888
+   ```
+3. Add to your dlog configuration:
+   ```ruby
+   add_gsub /^SONG$/ do |entry|
+     set_tool_path 'tools/spotify-song.rb'
+     next unless has_tool?
+
+     run_tool
+     next "❌ Error retrieving song" if tool_error?
+
+     tool_output
+   end
+   ```
+
+**First Run**:
+- The tool will open your browser for Spotify authorization
+- Approve the permissions (only needs read access to currently playing)
+- Tokens are saved to `~/.config/erebusbat/spotify_token.yml`
+- Authorization only needs to be done once
+
+**Usage**:
+```bash
+dlog "SONG"
+# Creates: - *10:30* - [🎵 Bohemian Rhapsody - Queen](https://open.spotify.com/track/...)
+```
+
+**Error Handling**:
+- `❌ SONG ERROR: No track currently playing` - Nothing is playing or Spotify is paused
+- `❌ SONG ERROR: Access token expired` - Re-authorization needed
+- `❌ SONG ERROR: API request failed` - Network or API issues
+
 ### Raycast Integration
 
 Quick logging directly from Raycast with keyboard shortcuts:
