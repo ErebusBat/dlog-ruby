@@ -1,5 +1,6 @@
 require_relative 'dsl'
 require_relative 'vault'
+require_relative 'parser/markdown_log'
 
 def config_file_path
   [
@@ -52,9 +53,8 @@ def append_to_log(cfg, entry, day: Date.today)
   daily_log = vault.path_to_log(day)
 
   # cfg.dbug "Appending entry to log:\n\tlog: #{daily_log}\n\ttxt: #{entry}"
-  daily_log.open('a') do |file|
-    file.puts entry
-  end
+  parser = Parser::MarkdownLog.new(daily_log)
+  parser.append_to_log_section(entry)
 end
 
 def main
