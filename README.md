@@ -227,21 +227,44 @@ dlog "SONG"
 
 ### Custom Processing
 
-You can create complex substitutions with Ruby blocks:
+You can create complex substitutions with Ruby blocks. The block receives two parameters:
+- `entry`: The full text being processed
+- `match`: The matched text from the regex pattern
 
 ```ruby
 # Add current weather
-add_gsub /^WEATHER$/ do |entry|
+add_gsub /^WEATHER$/ do |entry, match|
   weather = `curl -s "wttr.in?format=%c+%t"`
   "Weather: #{weather.strip}"
 end
 
-# Add task ID from environment
-add_gsub /TASK:(\w+)/ do |entry, match|
-  task_id = match[1]
+# Add task ID from environment - using the match parameter
+add_gsub /TASK-(\d+)/ do |entry, match|
+  task_id = match.match(/TASK-(\d+)/)[1]
   "[[Tasks/#{task_id}|Task ##{task_id}]]"
 end
+
+# Conditional replacement - return nil to skip replacement
+add_gsub /ISSUE-(\d+)/ do |entry, match|
+  issue_num = match.match(/ISSUE-(\d+)/)[1].to_i
+  next if issue_num < 1000  # Don't replace issues below 1000
+  "[[https://github.com/org/repo/issues/#{issue_num}|ISSUE-#{issue_num}]]"
+end
+
+# Remove text - return empty string to delete matched text
+add_gsub /\[REDACTED\]/ do |entry, match|
+  ""  # This removes [REDACTED] from the text
+end
 ```
+
+#### Block Return Values
+
+When using blocks with `add_gsub`:
+- **Return a string**: Replaces the matched text with the returned string
+- **Return `nil`** (via `next` without a value): Leaves the matched text unchanged (no-op)
+- **Return `""`** (empty string): Removes the matched text entirely
+
+This allows for conditional processing where you can decide at runtime whether to replace, keep, or remove matched text.
 
 ### Debug Mode
 

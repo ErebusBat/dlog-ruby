@@ -10,7 +10,7 @@ module Dsl
       raise "Need at least a page!" if @page.empty?
     end
 
-    def replace_text(_entry)
+    def replace_text(_entry, _match)
       link = "[["
       link += page
       if !@display.empty?

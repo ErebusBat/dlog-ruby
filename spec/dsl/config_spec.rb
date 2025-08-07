@@ -105,10 +105,68 @@ RSpec.describe Dsl::Config do
         let(:sub_value) { 'YOUR MOM'}
         let(:cfg) do
           loader.build do |cfg|
-            cfg.add_gsub 'KEY' do |entry|
+            cfg.add_gsub 'KEY' do |entry, match|
               "YOUR MOM"
             end
           end
+        end
+      end
+
+      context "using match parameter" do
+        let(:cfg) do
+          loader.build do |cfg|
+            cfg.add_gsub /CCAM-(\d+)/ do |entry, match|
+              issue_num = match.match(/CCAM-(\d+)/)[1]
+              "[[https://ccam.atlassian.net/browse/CCAM-#{issue_num}|CCAM-#{issue_num}]]"
+            end
+          end
+        end
+
+        it "uses captured match in replacement" do
+          output = cfg.process_entry_text("Working on CCAM-1234 today")
+          expect(output).to eq "Working on [[https://ccam.atlassian.net/browse/CCAM-1234|CCAM-1234]] today"
+        end
+
+        it "handles multiple matches" do
+          output = cfg.process_entry_text("Fixed CCAM-1234 and CCAM-5678")
+          expect(output).to eq "Fixed [[https://ccam.atlassian.net/browse/CCAM-1234|CCAM-1234]] and [[https://ccam.atlassian.net/browse/CCAM-5678|CCAM-5678]]"
+        end
+      end
+
+      context "returning nil for no-op" do
+        let(:cfg) do
+          loader.build do |cfg|
+            cfg.add_gsub /TEST-(\d+)/ do |entry, match|
+              issue_num = match.match(/TEST-(\d+)/)[1].to_i
+              next if issue_num < 1000  # Don't replace if issue number is less than 1000
+              "[[TEST Issue #{issue_num}]]"
+            end
+          end
+        end
+
+        it "leaves text unchanged when block returns nil" do
+          output = cfg.process_entry_text("TEST-999 should not change")
+          expect(output).to eq "TEST-999 should not change"
+        end
+
+        it "replaces when block returns a value" do
+          output = cfg.process_entry_text("TEST-1234 should change")
+          expect(output).to eq "[[TEST Issue 1234]] should change"
+        end
+      end
+
+      context "returning empty string to remove text" do
+        let(:cfg) do
+          loader.build do |cfg|
+            cfg.add_gsub /\[REMOVE\]/ do |entry, match|
+              ""
+            end
+          end
+        end
+
+        it "removes matched text when block returns empty string" do
+          output = cfg.process_entry_text("This [REMOVE] should be gone")
+          expect(output).to eq "This  should be gone"
         end
       end
     end

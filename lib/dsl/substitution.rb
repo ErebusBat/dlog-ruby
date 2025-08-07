@@ -14,20 +14,18 @@ module Dsl
     end
 
     def run(entry)
-      match = search_rx.match(entry)
-      return entry if match.nil?
+      entry.gsub(search_rx) do |match|
+        rtxt = replace_text(entry, match)
 
-      rtxt = replace_text(entry)
-      if rtxt.nil?
-        entry
-      else
-        entry.gsub(search_rx, rtxt)
+        # If the replace text is nil, that means the gsub was a no-op
+        # If a tool wants to remove the match, it should return ""
+        rtxt.nil? ? match : rtxt
       end
     end
 
-    def replace_text(entry)
+    def replace_text(entry, match)
       return replace if replace.is_a?(String)
-      replace.call(entry)
+      replace.call(entry, match)
     end
 
     def inspect

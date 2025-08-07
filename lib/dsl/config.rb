@@ -54,7 +54,7 @@ module Dsl
       if block_given?
         raise "You can not specify a replace value AND a block" unless replace.nil?
         actual_params = block.parameters
-        raise "Invalid gsub block signature, it should just be `|entry|` Got: #{actual_params}" unless actual_params.count == 1
+        raise "Invalid gsub block signature, it should just be `|entry, match|` Got: #{actual_params}" unless actual_params.count == 2
 
         replace = block
       end
@@ -157,8 +157,12 @@ module Dsl
     end
 
     def run_tool(tool=tool_path, args=nil)
-      dbug "run_tool('#{tool}', #{args})"
-      set_tool_path(tool) # Will reset output and ec
+      dbug("run_tool-START tool=#{tool.class}=#{tool} args=#{args.class}=#{args}")
+      if tool == :with_args
+        tool = tool_path
+      end
+      set_tool_path(tool)   # Will reset output and ec
+      dbug "run_tool('#{tool_path}', #{args})"
       raise "Could not find tool '#{tool}'" unless has_tool?(tool)
 
       tool_path = find_path_to_tool(tool)
