@@ -169,6 +169,29 @@ dlog "Meeting with DHH about Rails"
 # Creates: - *15:00* - Meeting with [[David Heinemeier Hansson|DHH]] about Rails
 ```
 
+### Time Prefix Overrides
+
+You can override the timestamp for an entry using prefixes:
+
+```bash
+# Absolute time prefix (HH:MM or HHMM format)
+dlog "12:34|Had lunch"
+# Creates: - *12:34* - Had lunch
+
+# Relative time prefix (minutes ago by default)
+dlog "-15|Quick phone call"
+# Creates: - *09:30* - Quick phone call (if current time is 09:45)
+
+# Relative time with hours
+dlog "-2h30m|Started working on project"
+# Creates: - *07:15* - Started working on project (if current time is 09:45)
+
+# Other relative formats
+dlog "-45m|Coffee break"      # 45 minutes ago
+dlog "-1h|Team meeting"       # 1 hour ago
+dlog "-90|Long task"          # 90 minutes ago (bare numbers are always minutes)
+```
+
 ### Multiple Substitutions
 
 Substitutions can be combined:
