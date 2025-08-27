@@ -300,16 +300,20 @@ module Dsl
         ret[:input] = matches["text"]
       end
 
+      if ret[:input] == '.'
+        ret[:input] = '⬆︎'
+      end
+
       ret
     end
 
     def parse_relative_time(relative_str)
       now = Time.now
-      
+
       # Parse hours and minutes from the relative string
       hours = 0
       minutes = 0
-      
+
       # Match patterns like "1h30m", "45m", "2h", or just "12"
       if relative_str =~ /^(\d+)h(\d+)m$/
         hours = $1.to_i
@@ -322,7 +326,7 @@ module Dsl
         # Bare number: always treat as minutes
         minutes = $1.to_i
       end
-      
+
       # Calculate the time in the past
       now - (hours * 3600) - (minutes * 60)
     end
