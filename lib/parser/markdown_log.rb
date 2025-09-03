@@ -85,7 +85,10 @@ module Parser
 
       new_entries.each.with_index do |entry, i|
         # Does entry have two on one line?
-        if match = entry.match(/(- \*\d\d:\d\d\* -\s.+)/, 1)
+        match = nil
+        match = entry.match(/(- \*\d\d:\d\d\* -\s.+)/, 1) unless match.present?
+        match = entry.match(/\w(\*\d\d:\d\d\* -\s.+)/, 2) unless match.present?
+        if match.present?
           new_entry = match[1]
           old_entry = entry.sub(new_entry, "")
           new_entries[i] = old_entry
