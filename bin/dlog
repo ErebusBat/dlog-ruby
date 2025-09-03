@@ -1,4 +1,9 @@
 #!/usr/bin/env ruby
 require_relative '../dlog'
 
-main_append
+if ARGV.size == 0
+  print "Enter Log: "
+  input = $stdin.readline.strip
+end
+
+main_append input

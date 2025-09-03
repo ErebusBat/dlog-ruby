@@ -70,9 +70,9 @@ def main_fixup(cfg=nil)
   append_to_log(cfg, nil)
 end
 
-def main_append
+def main_append(input=nil)
   cfg = find_and_load_user_config
-  input = read_input
+  input ||= read_input
 
   if input.blank?
     $stderr.puts "No input, exiting"
