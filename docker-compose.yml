@@ -1,6 +1,6 @@
 services:
   dlog:
-    image: dlog:latest
+    image: dlog-fixup:latest
     environment:
       - DLOG_SLEEP=10
     volumes:
