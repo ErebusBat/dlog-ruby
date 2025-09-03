@@ -25,6 +25,7 @@ module Parser
       # Add new entry and sort
       log_entries << new_entry
       log_entries = sort_entries(log_entries)
+      log_entries = filter_entries(log_entries)
 
       # Rebuild the file content
       new_lines = []
@@ -75,6 +76,12 @@ module Parser
 
     def sort_entries(entries)
       entries.sort_by { |entry| entry.downcase }.uniq
+    end
+
+    def filter_entries(entries)
+      entries.select do |entry|
+        entry.match?(/^- \*\d\d:\d\d\* -\s/)
+      end
     end
   end
 end
