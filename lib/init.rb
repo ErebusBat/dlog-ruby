@@ -1,3 +1,4 @@
+# require 'date'
 require_relative 'dsl'
 require_relative 'vault'
 require_relative 'parser/markdown_log'
@@ -48,13 +49,25 @@ def read_input
   input.strip
 end
 
-def append_to_log(cfg, entry, day: Date.today)
+def path_to_daily_log(cfg=nil, day: Date.today)
+  cfg ||= find_and_load_user_config
   vault = Vault.new(cfg)
-  daily_log = vault.path_to_log(day)
+  vault.path_to_log(day)
+end
+
+def append_to_log(cfg, entry, day: Date.today)
+  daily_log = path_to_daily_log(cfg, day: day)
 
   # cfg.dbug "Appending entry to log:\n\tlog: #{daily_log}\n\ttxt: #{entry}"
   parser = Parser::MarkdownLog.new(daily_log)
   parser.append_to_log_section(entry)
+end
+
+def main_fixup(cfg=nil)
+  cfg ||= find_and_load_user_config
+  daily_log = path_to_daily_log(cfg)
+
+  append_to_log(cfg, nil)
 end
 
 def main_append

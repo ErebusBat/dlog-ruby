@@ -23,7 +23,7 @@ module Parser
       log_entries = extract_log_entries(lines, start_index, end_index)
 
       # Add new entry and sort
-      log_entries << new_entry
+      log_entries << new_entry unless new_entry.blank?
       log_entries = filter_and_split_entries(log_entries)
       log_entries = sort_entries(log_entries)
 

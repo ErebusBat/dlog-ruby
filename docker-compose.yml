@@ -1,0 +1,8 @@
+services:
+  dlog:
+    image: dlog:latest
+    environment:
+      - DLOG_SLEEP=10
+    volumes:
+      - /Users/aburns/.config/dlog:/config
+      - /Users/aburns/Documents/Obsidian/vimwiki:/vault
