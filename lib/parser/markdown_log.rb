@@ -24,8 +24,8 @@ module Parser
 
       # Add new entry and sort
       log_entries << new_entry
+      log_entries = filter_and_split_entries(log_entries)
       log_entries = sort_entries(log_entries)
-      log_entries = filter_entries(log_entries)
 
       # Rebuild the file content
       new_lines = []
@@ -78,10 +78,21 @@ module Parser
       entries.sort_by { |entry| entry.downcase }.uniq
     end
 
-    def filter_entries(entries)
-      entries.select do |entry|
+    def filter_and_split_entries(entries)
+      new_entries = entries.select do |entry|
         entry.match?(/^- \*\d\d:\d\d\* -\s/)
       end
+
+      new_entries.each.with_index do |entry, i|
+        # Does entry have two on one line?
+        if match = entry.match(/(- \*\d\d:\d\d\* -\s.+)/, 1)
+          new_entry = match[1]
+          old_entry = entry.sub(new_entry, "")
+          new_entries[i] = old_entry
+          new_entries << new_entry
+        end
+      end
+      new_entries
     end
   end
 end
