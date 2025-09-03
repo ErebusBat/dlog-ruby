@@ -57,7 +57,7 @@ def append_to_log(cfg, entry, day: Date.today)
   parser.append_to_log_section(entry)
 end
 
-def main
+def main_append
   cfg = find_and_load_user_config
   input = read_input
 
