@@ -4,6 +4,7 @@ services:
     environment:
       - DLOG_SLEEP=${DLOG_SLEEP:-5}
       - DLOG_DELAY=${DLOG_WAIT:-30}
+      - DLOG_EXTRA_ARGS=--no-cache-config
 #      - DLOG_NO_CHANGE=60
     volumes:
       - ${HOME}/.config/dlog:/config

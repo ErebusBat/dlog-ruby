@@ -7,7 +7,7 @@ class Options
   attr_accessor :mode
 
   # :loop mode properties
-  attr_accessor :sleep, :write_delay, :log_freq
+  attr_accessor :sleep, :write_delay, :log_freq, :cache_config
 
   attr_reader :start_tick
 
@@ -22,6 +22,9 @@ class Options
     # How often should no change messages be output when looping
     self.log_freq = 1.minute
     @last_log_tick = 0
+
+    # Should config be cached?  If true then it will still be reloaded at the midnight boundry
+    @cache_config = true
 
     # loop or once
     self.mode = :once
@@ -74,6 +77,10 @@ class Options
       o.on("--log-no-change [SECONDS]", OptionParser::DecimalInteger, "Time between 'no change' log messages") do |v|
         opts.log_freq = v.to_i
       end
+
+      o.on("--[no-]cache-config", "Read cache every time or not") do |v|
+        opts.cache_config = v
+      end
     end.parse!(ARGV)
 
     opts
@@ -100,16 +107,30 @@ class Options
   end
 
   def config
+    cfg_loaded_today = @config_loaded_on == Date.today
     load_cfg = false
     load_cfg = true if @config.nil?
-    load_cfg = true if @config_loaded_on != Date.today
+    load_cfg = true if !cfg_loaded_today
+    load_cfg = true if !cache_config
 
     if load_cfg
-      log "t=#{running_ticks.to_i} Loading configuration"
+      # If we are not caching then we don't want to show the load logs on every call
+      # HOWEVER we do want to show then on the first run and every
+      show_log = cache_config && loop?
+      @last_config_loaded_tick ||= -1
+      if current_tick - @last_config_loaded_tick >= 86_400
+        show_log = true
+      elsif !cfg_loaded_today
+        show_log = true
+      end
+
+      # Output log first so we know what happened if there is an error
+      log "t=#{running_ticks.to_i} Loading configuration" if show_log
       @config = find_and_load_user_config
       @config_loaded_on = Date.today
-      log "Found vault=#{vault_root(@config)}"
-      log "   Log File=#{path_to_daily_log(@config)}"
+      @last_config_loaded_tick = current_tick
+      log "Found vault=#{vault_root(@config)}" if show_log
+      log "   Log File=#{path_to_daily_log(@config)}" if show_log
     end
 
     @config
@@ -159,6 +180,7 @@ if opts.loop?
     "sleep=#{opts.sleep.to_s}s",
     "write_delay=#{opts.write_delay}s",
     "log_freq=#{opts.log_freq}s",
+    "cfg_cached=#{opts.cache_config}",
   ].join("  ")
 end
 
