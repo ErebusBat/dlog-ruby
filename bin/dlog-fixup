@@ -196,9 +196,13 @@ loop do
   elsif current_hash == prev_hash && fix_on_next_falling_edge
     fix_on_next_falling_edge = false
 
-    opts.log "Changes stabilized, waiting for #{opts.write_delay}s to fixup"
     prev_hash = current_hash
-    sleep opts.write_delay
+    # Check if this is the first pass
+    # We want to run immediately on start, THEN start delaying
+    if opts.running_ticks > 10
+      opts.log "Changes stabilized, waiting for #{opts.write_delay}s to fixup"
+      sleep opts.write_delay
+    end
 
     # Now make sure the file hasn't changed in our delay time
     current_hash = opts.daily_log_hash
@@ -211,6 +215,7 @@ loop do
 
     opts.log "#{ticks_s} #{opts.daily_log_human} Fixing up"
     main_fixup
+    opts.log "#{ticks_s} #{opts.daily_log_human} Fixed up"
 
     # Update the 'current_hash' so we don't trigger a change from our change
     current_hash = opts.daily_log_hash
