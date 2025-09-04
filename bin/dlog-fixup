@@ -9,6 +9,8 @@ class Options
   # :loop mode properties
   attr_accessor :sleep, :write_delay, :log_freq
 
+  attr_reader :start_tick
+
   def initialize
     # Time to wait between checking file for changes
     @sleep = 5.seconds
@@ -23,10 +25,16 @@ class Options
 
     # loop or once
     self.mode = :once
+
+    @start_tick = current_tick
   end
 
   def current_tick
     Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  end
+
+  def running_ticks
+    current_tick - @start_tick
   end
 
   def log_freq=(v)
@@ -91,13 +99,39 @@ class Options
     @last_log_tick = current_tick
   end
 
-  def daily_log
-    cfg = find_and_load_user_config
-    path_to_daily_log(cfg)
+  def config
+    load_cfg = false
+    load_cfg = true if @config.nil?
+    load_cfg = true if @config_loaded_on != Date.today
+
+    if load_cfg
+      log "t=#{running_ticks.to_i} Loading configuration"
+      @config = find_and_load_user_config
+      @config_loaded_on = Date.today
+      log "Found vault=#{vault_root(@config)}"
+      log "   Log File=#{path_to_daily_log(@config)}"
+    end
+
+    @config
+  end
+
+  def vault_root(cfg=config)
+    vault = Vault.new(cfg)
+    vault.config.vault_root
+  end
+
+  def daily_log_path
+    path_to_daily_log(config)
+  end
+
+  def daily_log_human
+    vroot = vault_root.to_s + "/"
+    path = daily_log_path.to_s
+    path.sub(vroot, '')
   end
 
   def daily_log_hash
-    file_path = Pathname.new(daily_log)
+    file_path = Pathname.new(daily_log_path)
     return unless file_path.size?
 
     sha256 = Digest::SHA256.new
@@ -130,9 +164,11 @@ end
 
 loop do
   current_hash = opts.daily_log_hash
+  ticks_s = "t=#{opts.running_ticks.to_i}"
+
   if current_hash != prev_hash
     if prev_hash.present?
-      opts.log "#{opts.daily_log} File has changed!"
+      opts.log "#{ticks_s} #{opts.daily_log_human} File has changed!"
     end
     fix_on_next_falling_edge = true
   elsif current_hash == prev_hash && fix_on_next_falling_edge
@@ -145,19 +181,19 @@ loop do
     # Now make sure the file hasn't changed in our delay time
     current_hash = opts.daily_log_hash
     if current_hash != prev_hash
-      opts.log "#{opts.daily_log} File changed during delay period, not fixing up"
+      opts.log "#{opts.daily_log_human} File changed during delay period, not fixing up"
       prev_hash = current_hash
       fix_on_next_falling_edge = true
       next
     end
 
-    opts.log "#{opts.daily_log} Fixing up"
+    opts.log "#{ticks_s} #{opts.daily_log_human} Fixing up"
     main_fixup
 
     # Update the 'current_hash' so we don't trigger a change from our change
     current_hash = opts.daily_log_hash
   elsif current_hash == prev_hash
-    opts.log_throttle "#{opts.daily_log} No change"
+    opts.log_throttle "#{ticks_s} #{opts.daily_log_human} No change"
   end
 
   # Fast 1st Loop
