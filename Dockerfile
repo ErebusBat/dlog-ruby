@@ -6,7 +6,12 @@ ENV DLOG_DELAY=30
 ENV DLOG_CONFIG=/config/vault.rb
 
 WORKDIR /app
-COPY . .
+
+# Setup Gems
+COPY Gemfile* .
 RUN bundle
+
+# Now copy the rest of the app
+COPY . .
 
 CMD bin/dlog-fixup --watch --sleep $DLOG_SLEEP --delay $DLOG_DELAY
