@@ -4,7 +4,10 @@ require 'digest'
 require 'optparse'
 
 class Options
-  attr_accessor :mode, :sleep, :write_delay
+  attr_accessor :mode
+
+  # :loop mode properties
+  attr_accessor :sleep, :write_delay, :log_freq
 
   def initialize
     # Time to wait between checking file for changes
@@ -14,8 +17,23 @@ class Options
     # initiating the write
     @write_delay = 1.second
 
+    # How often should no change messages be output when looping
+    self.log_freq = 1.minute
+    @last_log_tick = 0
+
     # loop or once
-    @mode = :once
+    self.mode = :once
+  end
+
+  def current_tick
+    Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  end
+
+  def log_freq=(v)
+    @log_freq = v.to_i
+    if @log_freq < 0
+      @log_freq = Integer::MAX
+    end
   end
 
   def mode=(v)
@@ -44,6 +62,10 @@ class Options
       o.on("-d", "--delay [SECONDS]", OptionParser::DecimalInteger, "Time to wait after a change has been detected until a fixup occurs") do |v|
         opts.write_delay = v.clamp(0, 3_600)
       end
+
+      o.on("--log-no-change [SECONDS]", OptionParser::DecimalInteger, "Time between 'no change' log messages") do |v|
+        opts.log_freq = v.to_i
+      end
     end.parse!(ARGV)
 
     opts
@@ -52,8 +74,21 @@ class Options
   def loop?; @mode == :loop end
   def once?; @mode == :once end
 
+  # Log, but respect log_freq
+  def log_throttle(msg)
+    should_log = false
+    should_log = true if once?
+    should_log = true if current_tick - @last_log_tick >= @log_freq
+
+    return unless should_log
+
+    log(msg)
+  end
+
+  # Write to log NOW
   def log(msg)
     $stderr.puts "[#{DateTime.now}] #{msg}"
+    @last_log_tick = current_tick
   end
 
   def daily_log
@@ -89,6 +124,7 @@ if opts.loop?
     "mode=#{opts.mode}",
     "sleep=#{opts.sleep.to_s}s",
     "write_delay=#{opts.write_delay}s",
+    "log_freq=#{opts.log_freq}s",
   ].join("  ")
 end
 
@@ -96,13 +132,13 @@ loop do
   current_hash = opts.daily_log_hash
   if current_hash != prev_hash
     if prev_hash.present?
-      opts.log "#{opts.daily_log} File has changed! '#{prev_hash}' != '#{current_hash}'"
+      opts.log "#{opts.daily_log} File has changed!"
     end
     fix_on_next_falling_edge = true
   elsif current_hash == prev_hash && fix_on_next_falling_edge
     fix_on_next_falling_edge = false
 
-    opts.log "Changes stabalized, waiting for #{opts.write_delay}s to fixup"
+    opts.log "Changes stabilized, waiting for #{opts.write_delay}s to fixup"
     prev_hash = current_hash
     sleep opts.write_delay
 
@@ -121,7 +157,7 @@ loop do
     # Update the 'current_hash' so we don't trigger a change from our change
     current_hash = opts.daily_log_hash
   elsif current_hash == prev_hash
-    opts.log "No change #{current_hash}"
+    opts.log_throttle "#{opts.daily_log} No change"
   end
 
   # Fast 1st Loop
