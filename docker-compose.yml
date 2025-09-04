@@ -2,6 +2,7 @@ services:
   dlog:
     image: erebusbat/dlog-fixup:latest
     environment:
+      - TZ=America/Denver
       - DLOG_SLEEP=${DLOG_SLEEP:-5}
       - DLOG_DELAY=${DLOG_WAIT:-30}
       - DLOG_EXTRA_ARGS=--no-cache-config
