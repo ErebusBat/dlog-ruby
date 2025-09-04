@@ -6,8 +6,18 @@ TAG=erebusbat/dlog-fixup:$(VER)
 irb:
 	irb -r./lib/init.rb
 
-build:
+build_dev:
 	docker build . --tag=$(TAG)
+
+build: build_linux build_darwin
+
+build_linux:
+	docker build . --tag=$(TAG) --platform=linux/amd64
+
+build_darwin:
+	docker build . --tag=$(TAG) --platform=darwin
+
+publish: build_linux push
 
 push:
 	docker push $(TAG)
