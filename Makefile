@@ -3,6 +3,9 @@ export DLOG_WAIT?=10
 VER?=latest
 TAG=erebusbat/dlog-fixup:$(VER)
 
+irb:
+	irb -r./lib/init.rb
+
 build:
 	docker build . --tag=$(TAG)
 
