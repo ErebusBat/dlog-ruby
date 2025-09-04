@@ -1,8 +1,9 @@
 services:
   dlog:
-    image: dlog-fixup:latest
+    image: erebusbat/dlog-fixup:latest
     environment:
-      - DLOG_SLEEP=10
+      - DLOG_SLEEP=${DLOG_SLEEP:-5}
+      - DLOG_DELAY=${DLOG_WAIT:-30}
     volumes:
-      - /Users/aburns/.config/dlog:/config
-      - /Users/aburns/Documents/Obsidian/vimwiki:/vault
+      - ${HOME}/.config/dlog:/config
+      - ${HOME}/Documents/Obsidian/vimwiki:/vault
