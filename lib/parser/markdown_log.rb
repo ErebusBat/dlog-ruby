@@ -80,17 +80,26 @@ module Parser
 
     def filter_and_split_entries(entries)
       new_entries = entries.select do |entry|
-        entry.match?(/^- \*\d\d:\d\d\* -\s/)
+        entry.match?(/^(- \[ \] )?- \*\d\d:\d\d\* -\s/)
       end
 
       new_entries.each.with_index do |entry, i|
+        # Does entry have a checkbox prefix (QuickCapture => Todoist?)
+        if entry.start_with?("- [ ] -")
+          entry.sub("- [ ] -", "-")
+          new_entries[i] = entry
+        end
+
         # Does entry have two on one line?
         match = nil
-        match = entry.match(/(- \*\d\d:\d\d\* -\s.+)/, 1) unless match.present?
-        match = entry.match(/\w(\*\d\d:\d\d\* -\s.+)/, 2) unless match.present?
+        match = entry.match(/(?<entry>- \*\d\d:\d\d\* -\s.+)/, 1) unless match.present?
+        match = entry.match(/\w(?<entry>\*\d\d:\d\d\* -\s.+)/, 5) unless match.present?
         if match.present?
-          new_entry = match[1]
+          new_entry = match["entry"]
           old_entry = entry.sub(new_entry, "")
+          if old_entry =~ /^- \[ \]( -)?\s*/
+            old_entry = ""
+          end
           new_entries[i] = old_entry
           new_entries << new_entry
         end
