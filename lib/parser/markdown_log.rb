@@ -7,6 +7,31 @@ module Parser
       raise "File not found: #{file_path}" unless @file_path.exist?
     end
 
+    def array_digest(ary, append: nil)
+      ary = ary.dup
+
+      # Remove trailing blanks
+      while ary.last.blank? do
+        ary.pop
+      end
+
+      # Append, if specified
+      if append.present?
+        ary << append
+      end
+
+      # Calculate the hash
+      sha256 = Digest::SHA256.new
+      ary.each do |line|
+        line.bytes.each_slice(1024) do |chunk|
+          # Convert the byte array back to a string
+          chunk_part = chunk.pack('C*')
+          sha256.update(chunk_part)
+        end
+      end
+      sha256.hexdigest  # Return the hex digest of the hash
+    end
+
     def append_to_log_section(new_entry)
       lines = @file_path.readlines
       log_section_index = find_log_section(lines)
@@ -19,13 +44,18 @@ module Parser
       start_index = log_section_index + 1
       end_index = find_section_end(lines, start_index)
 
-      # Extract log entries
+      # Extract log entries, and hash them
       log_entries = extract_log_entries(lines, start_index, end_index)
+      entries_original_hash = array_digest(log_entries, append: "count=#{end_index - start_index - 1}")
 
       # Add new entry and sort
       log_entries << new_entry unless new_entry.blank?
       log_entries = filter_and_split_entries(log_entries)
       log_entries = sort_entries(log_entries)
+
+      # See if anything actually changed, if not, then don't write
+      new_entries_hash = array_digest(log_entries, append: "count=#{log_entries.count}")
+      return false if new_entries_hash == entries_original_hash
 
       # Rebuild the file content
       new_lines = []
@@ -45,6 +75,7 @@ module Parser
 
       # Write back to file
       @file_path.write(new_lines.join)
+      true
     end
 
     private

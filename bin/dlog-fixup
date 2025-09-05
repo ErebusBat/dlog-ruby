@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 require_relative '../dlog'
-require 'digest'
 require 'optparse'
 
 class Options
@@ -213,9 +212,13 @@ loop do
       next
     end
 
-    opts.log "#{ticks_s} #{opts.daily_log_human} Fixing up"
-    main_fixup
-    opts.log "#{ticks_s} #{opts.daily_log_human} Fixed up"
+    opts.log "#{ticks_s} #{opts.daily_log_human} Examining File"
+    result = main_fixup
+    if result
+      opts.log "#{ticks_s} #{opts.daily_log_human} Log Fixed Up!"
+    else
+      opts.log "#{ticks_s} #{opts.daily_log_human} No log changes, detected."
+    end
 
     # Update the 'current_hash' so we don't trigger a change from our change
     current_hash = opts.daily_log_hash

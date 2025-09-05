@@ -1,4 +1,5 @@
 # require 'date'
+require 'digest'
 require_relative 'dsl'
 require_relative 'vault'
 require_relative 'parser/markdown_log'
