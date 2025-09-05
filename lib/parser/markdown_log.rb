@@ -73,6 +73,9 @@ module Parser
         new_lines.concat(lines[end_index..-1])
       end
 
+      # Remove new line on last entry
+      new_lines[new_lines.size - 1] = new_lines.last.strip
+
       # Write back to file
       @file_path.write(new_lines.join)
       true
