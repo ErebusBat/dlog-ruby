@@ -5,6 +5,7 @@
 # `$XDG_CONFIG_HOME/git/ignore` or `~/.config/git/ignore`
 
 .DS_Store
+/.idea/
 
 # Ignore local config folder, it is only there for convinence
 config/local/*
