@@ -212,6 +212,8 @@ loop do
       next
     end
 
+    # Run Fixup, log if file was actually written to or not
+    # (i.e. it might have been changed outside of the LOG section)
     opts.log "#{ticks_s} #{opts.daily_log_human} Examining File"
     result = main_fixup
     if result
