@@ -165,15 +165,77 @@ class Options
 end
 
 ########################################
+# Watchdog
+########################################
+class Watchdog
+  attr_reader :opts, :last_pet, :check, :warning_at, :kill_at
+
+  def initialize(opts:, check: 60, kill_at: 120)
+    @opts = opts
+    @check = check
+    @kill_at = kill_at
+    @warning_at = kill_at / 2
+    @have_warned = false
+
+    pet!
+  end
+
+  def pet!
+    tics = tics_since_last_pet
+    @last_pet = current_tic
+
+    if tics.nil? || !@have_warned
+      # Don't log
+    else
+      log "Pet @ #{@last_pet}; went without pets for #{tics}" unless tics.nil?
+    end
+    @have_warned = false
+  end
+
+  def watch_loop!
+    log "Starting watchdog loop; check=#{@check}  warning_at=#{@warning_at}  kill_at=#{@kill_at}"
+
+    loop do
+      sleep 1
+
+      tics = tics_since_last_pet
+      if tics >= kill_at
+        log "FATAL: Have not been pet in #{tics} tics, killing!"
+        exit 7
+      elsif tics >= warning_at && !@have_warned
+        @have_warned = true
+        log " WARN: Have not been pet in #{tics} tics, will die if not pet in #{kill_at} tics!"
+      end
+    end
+  end
+
+  def tics_since_last_pet
+    return if @last_pet.nil?
+
+    current_tic - @last_pet
+  end
+
+  private
+
+  def log(msg)
+    opts.log "WATCHDOG: #{msg}"
+  end
+
+  def current_tic
+    Process.clock_gettime(Process::CLOCK_MONOTONIC).to_i
+  end
+end
+
+########################################
 # Main
 ########################################
 opts = Options.from_args(ARGV)
+wdog = Watchdog.new(opts: opts, check: 5, kill_at: 2.minutes.to_i)
 prev_hash = ""
 fix_on_next_falling_edge = false
 
 opts.log "Starting..."
 if opts.loop?
-  # opts.log "mode=#{opts.mode}  sleep=#{opts.sleep.to_s}s  write_delay=#{opts.write_delay}s"
   opts.log [
     "mode=#{opts.mode}",
     "sleep=#{opts.sleep.to_s}s",
@@ -183,7 +245,9 @@ if opts.loop?
   ].join("  ")
 end
 
+Thread.new { wdog.watch_loop! }
 loop do
+  wdog.pet!
   current_hash = opts.daily_log_hash
   ticks_s = "t=#{opts.running_ticks.to_i}"
 
