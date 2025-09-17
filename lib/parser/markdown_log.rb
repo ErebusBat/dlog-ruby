@@ -123,8 +123,8 @@ module Parser
         # Does entry have two on one line?
         match = nil
         match = entry.match(/^(?<task>- \[ \] )(?<entry>- \*\d\d:\d\d\* -\s.+)\s\(@(?<due_date>20\d\d-\d\d-\d\d)\)$/) unless match.present?
-        match = entry.match(/\w(?<entry>\*\d\d:\d\d\* -\s.+)/, 5) unless match.present?
         match = entry.match(/(?<entry>- \*\d\d:\d\d\* -\s.+)/, 1) unless match.present?
+        match = entry.match(/(?<entry>\*\d\d:\d\d\* -\s.+)/, 5) unless match.present?
         if match.present?
           if match.named_captures.key?("task")
             old_entry = match["entry"]
@@ -138,6 +138,10 @@ module Parser
             new_entries[i] = old_entry
           end
           if !new_entry.blank?
+            # Make sure that we are inserting as a list item
+            new_entry.strip!
+            new_entry = "- #{new_entry}" unless new_entry.starts_with?("-")
+
             new_entries << new_entry
           end
         end
