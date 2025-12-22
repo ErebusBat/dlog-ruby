@@ -13,6 +13,7 @@ module Parser
       # Remove trailing blanks
       while ary.last.blank? do
         ary.pop
+        break if ary.empty?
       end
 
       # Append, if specified
