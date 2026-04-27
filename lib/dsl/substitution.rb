@@ -3,7 +3,9 @@ module Dsl
     attr_reader :search_rx, :replace
 
     def initialize(search_rx, replace)
-      raise "search_rx should be a Regexp" unless search_rx.is_a?(Regexp)
+      unless search_rx.is_a?(Regexp) || search_rx.is_a?(PatternMatcher)
+        raise "search_rx should be a Regexp or PatternMatcher"
+      end
       @search_rx = search_rx
 
       if replace.is_a?(String) || replace.is_a?(Proc)
@@ -14,7 +16,8 @@ module Dsl
     end
 
     def run(entry)
-      entry.gsub(search_rx) do |match|
+      pattern = search_rx.respond_to?(:to_regexp) ? search_rx.to_regexp : search_rx
+      entry.gsub(pattern) do |match|
         rtxt = replace_text(entry, match)
 
         # If the replace text is nil, that means the gsub was a no-op
@@ -42,7 +45,9 @@ module Dsl
     end
 
     def self.build_gsub(search, replace)
-      search = /#{Regexp.escape(search)}/ unless search.is_a?(Regexp)
+      unless search.is_a?(Regexp) || search.is_a?(PatternMatcher)
+        search = /#{Regexp.escape(search)}/
+      end
       Substitution.new(search, replace)
     end
   end

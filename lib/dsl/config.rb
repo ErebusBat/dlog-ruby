@@ -1,5 +1,6 @@
 module Dsl
   class Config
+    include Dsl::Patterns
     attr_reader :config_file_path
     attr_reader :vault_root, :daily_log_finder, :gsubs, :prefixes, :entry_prefix, :tool_path
 

@@ -3,6 +3,66 @@ require 'spec_helper'
 RSpec.describe Dsl::Config do
   let(:loader) { Dsl::Loader.new }
 
+  context "PatternMatcher" do
+    it "wraps regex patterns" do
+      pm = Dsl::PatternMatcher.new(/\d+/)
+      expect(pm).to be_a(Dsl::PatternMatcher)
+      expect(pm.match?("abc123")).to be true
+      expect(pm.match?("abc")).to be false
+    end
+
+    it "responds to =~" do
+      pm = Dsl::PatternMatcher.new(/\d+/)
+      expect(pm =~ "abc123").to eq(3)
+      expect(pm =~ "abc").to be_nil
+    end
+
+    it "converts to regexp" do
+      pm = Dsl::PatternMatcher.new(/\d+/)
+      expect(pm.to_regexp).to eq(/\d+/)
+    end
+  end
+
+  context "phone? helper" do
+    let(:cfg) do
+      loader.build do |cfg|
+        cfg.add_gsub cfg.phone? do |entry, match|
+          "[#{match}]"
+        end
+      end
+    end
+
+    it "matches 10-digit with dashes" do
+      expect(cfg.process_entry_text("Call 123-456-7890"))
+        .to eq "Call [123-456-7890]"
+    end
+
+    it "matches with parentheses" do
+      expect(cfg.process_entry_text("Call (123) 456-7890"))
+        .to eq "Call [(123) 456-7890]"
+    end
+
+    it "matches with dots" do
+      expect(cfg.process_entry_text("Call 123.456.7890"))
+        .to eq "Call [123.456.7890]"
+    end
+
+    it "matches plain digits" do
+      expect(cfg.process_entry_text("Call 1234567890"))
+        .to eq "Call [1234567890]"
+    end
+
+    it "does not match 7-digit numbers" do
+      expect(cfg.process_entry_text("Call 456-7890"))
+        .to eq "Call 456-7890"
+    end
+
+    it "handles multiple phone numbers" do
+      expect(cfg.process_entry_text("Call 123-456-7890 or 987-654-3210"))
+        .to eq "Call [123-456-7890] or [987-654-3210]"
+    end
+  end
+
   context 'add_prefix' do
     let(:cfg) do
       loader.build do |cfg|
