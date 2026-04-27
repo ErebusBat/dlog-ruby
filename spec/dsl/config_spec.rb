@@ -61,6 +61,31 @@ RSpec.describe Dsl::Config do
       expect(cfg.process_entry_text("Call 123-456-7890 or 987-654-3210"))
         .to eq "Call [123-456-7890] or [987-654-3210]"
     end
+
+    it "matches with leading 1 and dash" do
+      expect(cfg.process_entry_text("Call 1-234-567-8901"))
+        .to eq "Call [1-234-567-8901]"
+    end
+
+    it "matches with leading 1 and space" do
+      expect(cfg.process_entry_text("Call 1 234-567-8901"))
+        .to eq "Call [1 234-567-8901]"
+    end
+
+    it "matches with leading 1 and parentheses" do
+      expect(cfg.process_entry_text("Call 1 (234) 567-8901"))
+        .to eq "Call [1 (234) 567-8901]"
+    end
+
+    it "matches with leading 1 and dots" do
+      expect(cfg.process_entry_text("Call 1.234.567.8901"))
+        .to eq "Call [1.234.567.8901]"
+    end
+
+    it "matches with leading 1 and no separators" do
+      expect(cfg.process_entry_text("Call 12345678901"))
+        .to eq "Call [12345678901]"
+    end
   end
 
   context 'add_prefix' do
