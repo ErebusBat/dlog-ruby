@@ -278,6 +278,8 @@ set_debug $stderr
 
 dlog includes helper tools to make integration easier:
 
+The Docker image built from this repo also includes `markdown-tool` so workflows can transform snippets into markdown links without additional install steps.
+
 ### bin_wrapper.sh
 
 A production-ready wrapper script that handles Ruby environment setup:
