@@ -36,4 +36,8 @@ RUN markdown-tool --help > /dev/null
 # Copy dlog application source
 COPY . .
 
-CMD bin/dlog-fixup --watch --log-no-change $DLOG_NO_CHANGE --sleep $DLOG_SLEEP --delay $DLOG_DELAY $DLOG_EXTRA_ARGS
+# Ensure container entrypoint script is executable
+RUN chmod +x tools/docker-entrypoint.sh
+
+ENTRYPOINT ["tools/docker-entrypoint.sh"]
+CMD []
