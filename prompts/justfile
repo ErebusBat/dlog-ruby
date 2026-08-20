@@ -1,0 +1,84 @@
+# vim: set ft=just ts=4 sw=4 sts=4 et noai si sta:
+# MODEL := 'lm-studio/qwen/qwen3.6'
+# MODEL := 'lm-studio/bonsai'
+# MODEL := 'lm-studio/qwen3-4b-instruct-2507-mlx'
+MODEL := 'openai-codex/gpt-5.3-codex-spark'
+CONFIG_OVERLAY := 'omp.yml'
+CATEGORIES := env('HOME') / '.config/dlog/000_prefixes.rb'
+OMP_PROFILE := 'personal'
+PROMPT := 'one-liner-classifier.md'
+SESSION_DIR := 'sessions'
+OUT_FILE := '/tmp/classify.out.md'
+
+classify entry:
+    #!/usr/bin/env zsh
+    set -euo pipefail
+
+    user_msg="<entry>{{entry}}</entry>"
+    cat_file="{{CATEGORIES}}"
+    session_dir="{{SESSION_DIR}}"
+    ompArgs=()
+
+    ompArgs+=(--profile "{{OMP_PROFILE}}")
+    ompArgs+=(--model "{{MODEL}}")
+    if [[ -n "{{CONFIG_OVERLAY}}" ]]; then
+        ompArgs+=(--config "{{CONFIG_OVERLAY}}")
+    fi
+    if [[ -n $session_dir && -d $session_dir ]]; then
+        ompArgs+=(--session-dir "$session_dir")
+    else
+        ompArgs+=(--no-session)
+    fi
+
+    # Disable
+    ompArgs+=(
+        --no-extensions
+        --no-lsp
+        --no-pty
+        --no-rules
+        --no-skills
+        --no-title
+        --no-tools
+    )
+
+    ompArgs+=(--system-prompt "'$(<{{PROMPT}})'")
+    ompArgs+=(@$cat_file)
+    ompArgs+=("-p")
+    ompArgs+=("$user_msg")
+
+    # Setup output redirection and run
+    out_file="{{OUT_FILE}}"
+    err_file="{{OUT_FILE}}.err"
+    echo "[$(date)]" > $err_file
+    echo "> omp ${ompArgs[@]}" >> $err_file
+    omp "${ompArgs[@]}" 2>$err_file > $out_file
+
+    # capture exit code and route accordingly.
+    omp_ec=$?
+    if [[ $omp_ec -eq 0 ]]; then
+        tail -1 $out_file
+        # We could clean up the temp files here, but they should be small and they're overwritten and literally they live in temp. So useful for debugging.
+    else
+        printf "*** ERROR: OhMyPi returned $omp_ec\n"
+        cat $out_file
+        printf "-------------------------------------"
+        cat $err_file
+        exit $omp_ec
+    fi
+
+tail-err *args='-f':
+    tail {{args}} {{OUT_FILE}}.err
+
+loop entry='Review AI DLC plan and Start Work on code Implementation on XKP; [🤖 xkp/019f8d64]':
+    #!/usr/bin/env zsh
+    set -euo pipefail
+
+    while [ 1 ]; do
+        promptHash=$(cat {{CATEGORIES}} {{PROMPT}} | md5sum | cut -c1-8)
+        printf "[$(date)] $promptHash "
+        typeset -F SECONDS=0
+        result=$(just classify '{{entry}}')
+        printf "%.1fs %s\n" $SECONDS "$result"
+        sleep 0.5  # So we can ctrl+c break
+    done
+
