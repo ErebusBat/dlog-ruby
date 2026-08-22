@@ -87,6 +87,12 @@ A dynamic replacement that surrounds each helper match with square brackets must
 | `Call (123) 456-7890` | `Call [(123) 456-7890]` |
 | `Call 123.456.7890` | `Call [123.456.7890]` |
 | `Call 1234567890` | `Call [1234567890]` |
+| `Call 123 456 7890` | `Call [123 456 7890]` |
+| `Call 1-234-567-8901` | `Call [1-234-567-8901]` |
+| `Call 1 234-567-8901` | `Call [1 234-567-8901]` |
+| `Call 1 (234) 567-8901` | `Call [1 (234) 567-8901]` |
+| `Call 1.234.567.8901` | `Call [1.234.567.8901]` |
+| `Call 12345678901` | `Call [12345678901]` |
 | `Call 456-7890` | `Call 456-7890` |
 | `Call 123-456-7890 or 987-654-3210` | `Call [123-456-7890] or [987-654-3210]` |
 
@@ -209,6 +215,20 @@ Run fixup. The timestamped entry must be extracted as a normal entry. The unchec
 ### DLOG-10: No-op digest
 
 Use a canonically formatted log section: a blank line immediately after `# Log`, followed only by sorted standard entries, plus the expected section spacing. Run fixup without a new entry. It must report no change and leave bytes untouched. Changing spacing, adding any nonstandard line, changing order, or adding a duplicate must trigger a rewrite.
+### DLOG-11: Mid-entry timestamp split
+
+Start with a `# Log` line that contains a second timestamped entry after arbitrary text, without a task marker or list marker before it:
+
+```text
+- *09:00* - Wrote notes ⬆︎ *09:45* - Follow up
+```
+
+Run fixup. The embedded `*09:45* - Follow up` is extracted and normalized into a full list item by prepending `- `. The residual is retained as-is; residuals are not re-trimmed, so the first line keeps its single trailing space. The resulting section is:
+
+```text
+- *09:00* - Wrote notes ⬆︎ 
+- *09:45* - Follow up
+```
 
 ## External-tool scenarios
 
@@ -219,6 +239,7 @@ Use a canonically formatted log section: a blank line immediately after `# Log`,
 | TOOL-03 | The configured tool exits `4`. | `toolError` is true; captured output is still available. |
 | TOOL-04 | A callback sets a tool path, then checks output before running. | Output is empty/null and exit status is nonzero. |
 | TOOL-05 | A tool path contains `/` but is relative. | Resolve from the process working directory, not the configuration directory. |
+| TOOL-06 | A callback invokes the currently selected tool again with an argument string, without naming it. | The same resolved executable runs with that argument string; captured output is cleared first and refreshed along with the exit status. |
 
 ## Fixup watcher scenarios
 

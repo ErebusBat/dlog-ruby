@@ -143,6 +143,8 @@ Dynamic callbacks can invoke a configured executable synchronously.
 4. Running a missing tool is an error.
 5. Invoke the resolved executable with an optional raw argument string, capture standard output, trim it, and retain the numeric process exit status.
 6. `toolSuccess` is true only for status `0`; `toolError` is true for every other status. `toolOutput` returns the trimmed captured output.
+7. An availability query reports whether a requested tool resolves to an executable file, using the same resolution cache.
+8. The currently selected tool can be invoked again with a new argument string without being named again; doing so clears prior output and refreshes the exit status exactly as naming the tool again would.
 
 The existing behavior delegates command construction to a shell and does not quote the optional argument string. A safety-improved implementation may avoid shell evaluation, but that is a deliberate behavioral incompatibility and must be called out if chosen.
 
